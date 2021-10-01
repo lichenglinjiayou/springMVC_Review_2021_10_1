@@ -1,10 +1,14 @@
 package com.atguigu.springMVC;
 
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.ui.Model;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import java.util.Map;
 
 /**
  * @author shkstart
@@ -66,12 +70,64 @@ public class HelloController {
                           3.@RequestParam:创建请求参数与形参之间的映射关系（用于形参与请求参数不同名时），存在三个属性：value:请求参数的别名；required:是否必须传输此请求参数，默认值为true
                             若请求中没有传输相应的请求参数，且没有设置defaultValue属性，则会报错400；若设置为false,在没有传输的情况下，则注解表示的形参值为null.
                             defaultValue:当指定的请求参数没有传输或传输的值为""时，会使用默认值为形参赋值。
-                          4.
+                          4.@RequestHeader:建立请求头信息与控制器方法形参之间的映射，有三个参数value、required、defaultValue，用法与@RequestParam相同。
+                          5.@CookieValue:建立cookie数据与控制器方法形参的映射关系
+                          6.通过pojo获取请求参数：可以将控制器方法的形参设置为实体bean类型的形参，若请求参数的参数名与实体类中的属性名一致时，请求参数就会自动为形参赋值。
+     */
+
+    /*
+    解决请求参数乱码的问题：1.GET请求：get请求的乱码问题是由tomcat服务器造成的，需要在server.xml文件中配置URIEncoding="UTF-8"/useBodyEncodingForURI="true"
+                          2.POST请求：通过配置编码过滤器解决乱码问题。编码过滤器必须配置在web.xml文件的最开始，保证在此之前为获取过请求参数。(看源码)
+     */
+
+    /*
+    域对象中共享数据：1.使用原生servletAPI向request域中共享数据
+                    区分：钝化：服务器关闭，但浏览器未关闭，session域中的数据会经过序列化后保存到磁盘上；
+                          活化：钝化后的文件重新读取到session域中
+                    2.使用ModelAndView向request域中共享数据:model用来向请求域中共享数据；view用来设置视图，实现页面跳转
+                    3.使用Model向request域中共享数据
+                    4.使用Map向request域中共享数据
+                    5.使用ModelMap向request域中共享数据
+                    注意：由于BindingAwareModelMap继承了ExtendedModelMap，ExtendedModelMap继承了ModelMap，实现了Model，ModelMap继承了Map的实现类LinkedHashMap，
+                    因此Model,Map,ModelMap三者本质上都是BindingAwareModelMap类型。
+                    6.向session域中共享数据/application域中共享数据均使用servlet原生API。但是取出域中数据时，必须添加session、application前缀。
      */
 
     @RequestMapping(value = "/servlet")
-    public String getParam(String username,String password){
-        System.out.println(username+"::"+password);
+    public String getParam(HttpServletRequest request){
+        HttpSession session = request.getSession();
+        return "success";
+    }
+
+    @RequestMapping(value = "/requestparam")
+    public String getParam(@RequestParam(value = "user_name",required = true)String username, String password, @RequestHeader(value = "User-Agent") String user_agent, @CookieValue(value = "JSESSIONID")String jsession){
+        System.out.println(username+password+user_agent+jsession);
+        return "success";
+    }
+
+    @RequestMapping(value = "/testModelAndView")
+    public ModelAndView testModelAndView(){
+        ModelAndView mav = new ModelAndView();
+        mav.addObject("username","lichenglin");
+        mav.setViewName("success");
+        return mav;
+    }
+
+    @RequestMapping(value = "/testModel")
+    public String testModel(Model model){
+        model.addAttribute("username","lichenglin");
+        return "success";
+    }
+
+    @RequestMapping(value = "/testMap")
+    public String testModel(Map<String,Object> map){
+        map.put("username","lichenglin");
+        return "success";
+    }
+
+    @RequestMapping(value = "/testModelMap")
+    public String testModel(ModelMap modelMap){
+        modelMap.addAttribute("username","lichenglin");
         return "success";
     }
 }
